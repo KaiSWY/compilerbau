@@ -1,0 +1,137 @@
+/* Project:  Compiler for language x
+ * Descr:    LR parser for language x
+ * Kind:     Scanner specification
+ */
+
+SCANNER x_scan
+
+EXPORT {
+/* code to be put into Scanner.h */
+#include "Position.h"
+#include "rString.h"
+
+/* Token Attributes.
+ * For each token with user defined attributes, we need a typedef for the
+ * token attributes.
+ * LPP extracts the token-attribute declaration from the parser specification.
+ * They are inserted here.
+ */
+INSERT tScanAttribute
+}
+
+GLOBAL {
+/* code to be put into Scanner.c */
+#include <stdlib.h>
+#include "Errors.h"
+#include "rString.h"
+
+/* Insert the routine computing "error-values" of attributes, in case the
+ * parser decides during error repair to insert a token.
+ */
+INSERT ErrorAttribute
+}
+
+LOCAL {
+  #define MAX_STRING_LEN 2048
+  char stringBuffer[MAX_STRING_LEN];
+  int stringLen = 0;
+  tPosition stringPos;
+}
+
+DEFAULT {
+  /* What happens if no scanner rule matches the input */
+  MessageI ("Illegal character", xxError, x_scan_Attribute.Position, xxCharacter, x_scan_TokenPtr);
+}
+
+EOF {
+  switch (yyStartState) {
+    case STD:
+      /* ok */
+      break;
+    case STRING:
+      Message ("string literal not closed", xxError, stringPos);
+      break;
+    case CMT:
+      Message ("c comment not closed", xxFatal, x_scan_Attribute.Position);
+      break;
+    default:
+      Message ("OOPS: that should not happen!!", xxFatal, x_scan_Attribute.Position);
+      break;
+  }
+}
+
+DEFINE  /* some abbreviations */
+  digit  = {0-9}       .
+  letter = {a-zA-Z}    .
+
+/* define start states, note STD is defined by default */
+START STRING, CMT
+
+RULES
+
+/* Integers */
+#STD# {0-9}+ : {
+  x_scan_GetWord(stringBuffer);
+  x_scan_Attribute.int_const.Value = atol(stringBuffer);
+  return int_const;
+}
+
+/* Float numbers */
+#STD# digit+ "." digit+ : {
+  x_scan_GetWord(stringBuffer);
+  x_scan_Attribute.float_const.Value = atof(stringBuffer);
+  return float_const;
+}
+
+/* double quote delimited strings */
+#STD# \" : {
+  yyStart(STRING);
+  stringLen = 0;
+  stringPos = x_scan_Attribute.Position;
+}
+
+#STRING# \" : {
+  yyStart(STD);
+  x_scan_Attribute.string_const.Value = PutString(stringBuffer, stringLen);
+  return string_const;
+}
+
+#STRING# \\ \n : {
+  stringBuffer[stringLen] = '\n';
+  stringLen++;
+}
+
+#STRING# \\ \" : {
+  stringBuffer[stringLen] = '"';
+  stringLen++;
+}
+
+/* TODO: Add all escaped string chars */
+
+#STRING# \n : {
+  Message("line break in string", xxError, x_scan_Attribute.Position);
+}
+
+#STRING# ANY : {
+  stringBuffer[stringLen] = *x_scan_TokenPtr;
+  stringLen++;
+}
+
+INSERT RULES #STD#
+
+/* identifiers */
+#STD# letter (letter | digit)* : {
+  x_scan_Attribute.identifier.Ident = MakeIdent(x_scan_TokenPtr, x_scan_TokenLength);
+  return identifier;
+}
+
+/* comments */
+#STD# "/*" : {
+  yyStart(CMT);
+}
+
+#CMT# "*/" : {
+  yyStart(STD);
+}
+
+#CMT# ANY : {}
