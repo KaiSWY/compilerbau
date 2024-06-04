@@ -1,0 +1,2 @@
+-- Korrekter Ausdruck
+a.b[c+d]*(a+b)+b->a
