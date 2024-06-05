@@ -39,6 +39,10 @@ test:
 	./$(MAIN) test5.x; echo
 	./$(MAIN) test6.x; echo
 
+
+tar: clean
+	cd .. && tar -czvf Schaefer-Raible-Schablowsky.tar.gz Schaefer-Raible-Schablowsky
+
 ###############################################################################
 
 # Create the Parser
