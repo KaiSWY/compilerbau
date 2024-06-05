@@ -13,7 +13,7 @@ statementlist ::= statement statementlist | comment statementlist | epsilon .
 
 comment ::= '/*' word '*/' .
 
-statement ::= statementblock | identifier assignop numberexpr '.' | identifier '=' stringexpr '.' | ifthenelse_stmt | for_stmt | while_stmt .
+statement ::= statementblock | identifier assignop expr '.' | ifthenelse_stmt | for_stmt | while_stmt .
 statementblock ::= 'begin' statementlist 'end' .
 
 assignop ::= '=' | '+=' | '-=' | '*=' | '/=' .
@@ -21,17 +21,15 @@ assignop ::= '=' | '+=' | '-=' | '*=' | '/=' .
 ifthenelse_stmt ::= 'if' condition 'then' statementlist else_o 'endif' .
 else_o ::= epsilon | 'else' statementlist | 'elif' condition 'then' statementlist else_o .
 
-for_stmt ::= 'for' identifier '=' numberexpr '.' condition '.' identifier assignop numberexpr 'do' statementlist 'endfor' .
+for_stmt ::= 'for' identifier '=' expr '.' condition '.' identifier assignop expr 'do' statementlist 'endfor' .
 while_stmt ::= 'while' condition 'do' statementlist 'endwhile' .
 
-numberexpr ::= intconst | floatconst | identifier | numberexpr '+' numberexpr | numberexpr '-' numberexpr | numberexpr '*' numberexpr | numberexpr '/' numberexpr | '-' numberexpr | '(' numberexpr ')' .
-condition ::= numberexpr '==' numberexpr | numberexpr '~=' numberexpr | numberexpr '<' numberexpr | numberexpr '>' numberexpr | numberexpr '<=' numberexpr |
-			  numberexpr '>=' numberexpr | condition '&&' condition | condition '||' condition | '~' condition || '(' condition ')' .
+expr ::= intconst | floatconst | stringconst | identifier | expr '+' expr | expr '-' expr | expr '*' expr | expr '/' expr | '-' expr | '(' expr ')' .
+condition ::= expr '==' expr | expr '~=' expr | expr '<' expr | expr '>' expr | expr '<=' expr |
+			  expr '>=' expr | condition '&&' condition | condition '||' condition | '~' condition || '(' condition ')' .
 
 intconst ::= digit | digit intconst .
 floatconst ::= intconst '.' intconst .
-
-stringexpr ::= stringconst | identifier | stringexpr '+' stringexpr .
 stringconst ::= '"' word '"' .
 
 identifier ::= letter | letter ledis .
