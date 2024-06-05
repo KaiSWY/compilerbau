@@ -25,8 +25,7 @@ for_stmt ::= 'for' identifier '=' expr '.' condition '.' identifier assignop exp
 while_stmt ::= 'while' condition 'do' statementlist 'endwhile' .
 
 expr ::= intconst | floatconst | stringconst | identifier | expr '+' expr | expr '-' expr | expr '*' expr | expr '/' expr | '-' expr | '(' expr ')' .
-condition ::= expr '==' expr | expr '~=' expr | expr '<' expr | expr '>' expr | expr '<=' expr |
-			  expr '>=' expr | condition '&&' condition | condition '||' condition | '~' condition || '(' condition ')' .
+condition ::= expr '==' expr | expr '~=' expr | expr '<' expr | expr '>' expr | expr '<=' expr | expr '>=' expr | condition '&&' condition | condition '||' condition | '~' condition || '(' condition ')' .
 
 intconst ::= digit | digit intconst .
 floatconst ::= intconst '.' intconst .
