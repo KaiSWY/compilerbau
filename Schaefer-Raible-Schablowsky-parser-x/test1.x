@@ -5,7 +5,7 @@ END_VAR
 
 EXEC
 /* for parser ok, but semantically not correct */
-a = a + (b * c) + " as " + ds - -d / 10 * (32 / a + v).
+a = a + (b * c) + " as " + ds - ----d / 10 * (32.0000002323 / a + v).
 
 a = " dsa da d" * dsa - asdas / "dsasdds".
 
