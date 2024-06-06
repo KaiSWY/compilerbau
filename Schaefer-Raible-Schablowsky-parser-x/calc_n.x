@@ -7,7 +7,7 @@ END_VAR
 
 EXEC
     /* calc sum of n value */   
-    for count = 0 . count < n . count += 1 do
-        result += (n + 1).
+    for result = 0 . n > 0 . n -= 1 do
+        result += n.
     endfor
 END_EXEC
