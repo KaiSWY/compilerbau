@@ -1,7 +1,7 @@
-PROG calcN
+PROG calcN.
 
 VAR
-    	!int result.
+	!int result.
 	?int n.
 END_VAR
 
@@ -10,9 +10,4 @@ EXEC
     for count = 0 . count < n . count += 1 do
         result += (n + 1).
     endfor
-
-    /* alternative rechnung */
-    for count = 1 . count <= n . count += 1 do
-	result += n.
-    end_for
 END_EXEC
