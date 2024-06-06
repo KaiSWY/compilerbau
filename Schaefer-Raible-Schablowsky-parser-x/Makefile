@@ -32,6 +32,7 @@ all: $(MAIN)
 test:
 	./$(MAIN) ggt.x; echo
 	./$(MAIN) faculty.x; echo
+	./$(MAIN) calc_n.x; echo
 	./$(MAIN) test1.x; echo
 	./$(MAIN) test2.x; echo
 	./$(MAIN) test3.x; echo
