@@ -11,7 +11,7 @@ EXEC
         result += (n + 1).
     endfor
 
-    /* alternative rechnng */
+    /* alternative rechnung */
     for count = 1 . count <= n . count += 1 do
 	result += n.
     end_for
