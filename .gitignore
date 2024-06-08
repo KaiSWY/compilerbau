@@ -31,3 +31,5 @@ expr-stmt
 expr-syntax-directed-code-gen
 expr-trip
 hello
+
+*ast.pdf
