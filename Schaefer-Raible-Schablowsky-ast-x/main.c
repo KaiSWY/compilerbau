@@ -10,8 +10,8 @@
 # include <string.h>
 # include "Position.h"
 # include "Errors.h"
-# include "expr_scan.h"
-# include "expr_pars.h"
+# include "x_scan.h"
+# include "x_pars.h"
 # include "Tree.h"
 
 int main (int argc, char *argv[])
@@ -26,20 +26,19 @@ int main (int argc, char *argv[])
        exit (0);
      }
 
-     expr_scan_Attribute.Position.FileName = MakeIdent1 (argv[1]);
-     expr_scan_BeginFile (argv[1]);
+     x_scan_Attribute.Position.FileName = MakeIdent1 (argv[1]);
+     x_scan_BeginFile (argv[1]);
      /* Read from file argv[1].
       * If this routine is not called, stdin is read.
       */
    }
 
-   BeginTree (); /* see expr.ast */
+   BeginTree();
 
-   errors = expr_pars ();  /* the parser */
-   printf ("parser returned: %d number of errors: %d\n",
-	   errors,GetCount (xxError));
+   errors = x_pars();  /* the parser */
+   printf("parser returned: %d number of errors: %d\n", errors, GetCount(xxError));
 
-   if (!CheckTree (TreeRoot)) {
+   if (!CheckTree(TreeRoot)) {
      fprintf (stderr, "Der Baum ist falsch aufgebaut\n");
      exit (1);
    }
@@ -49,7 +48,7 @@ int main (int argc, char *argv[])
     */
 
    /* set some parameters for the Tree Browser */
-   SetDepthTree (20);
+   SetDepthTree (50);
    SetBoxTree   (100, 20);
    DrawTree     (TreeRoot);
 

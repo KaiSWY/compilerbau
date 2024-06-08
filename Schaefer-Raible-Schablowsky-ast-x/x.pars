@@ -8,8 +8,26 @@ SCANNER x_scan
 PARSER  x_pars
 
 GLOBAL {
-#include <stdio.h>
-#include "rString.h"
+	#include <stdio.h>
+	#include "rString.h"
+	#include "Tree.h"
+	
+	static tTree setProgramTree(tTree metainfo, tTree vars, tTree stmts) {
+		metainfo->PROGRAM.Vars = vars;
+		metainfo->PROGRAM.Body = stmts;
+		return metainfo;
+	}
+	
+	static tTree setNextVarDec(tTree varDec, tTree next) {
+		varDec->var_dec.Next = next;
+		return varDec;
+	}
+	
+	static tTree setAssignStmt(tTree assignStmt, tTree identifier, tTree expr) {
+		assignStmt->assign_stmt.Var = identifier;
+		assignStmt->assign_stmt.Rhs = expr;
+		return assignStmt;
+	}
 }
 
 PREC LEFT '||'
@@ -21,95 +39,151 @@ PREC LEFT '||'
 
 RULE
 
-program = metainfo vardeclarationblock executionblock .
+root = p:program 
+	 {=> {TreeRoot = p:tree;};} .
 
-metainfo = PROG identifier '.' .
+program = m:metainfo v:vardeclarationblock e:executionblock
+		{tree := setProgramTree(m:tree, v:tree, e:tree);} .
+
+metainfo = PROG i:identifier '.' 
+		 {tree := mPROGRAM(mname(i:Ident), NoTree, NoTree);} .
 
 /* variable declarations */
-vardeclarationblock = VAR vardeclarationlist END_VAR .
+vardeclarationblock = VAR v:vardeclarationlist END_VAR
+					{tree := v:tree;} .
 
 vardeclarationlist = <
-	= vardeclaration vardeclarationlist .
-	= . // epsilon
+	= h:vardeclaration t:vardeclarationlist 
+	{tree := setNextVarDec(h:tree, t:tree);}.
+	= // epsilon
+	{tree := mno_var_dec();} . 
 > .
 
-vardeclaration = varinout vartype identifier '.' .
+vardeclaration = v:varinout t:vartype i:identifier '.'
+			   {tree := mvar_dec(NoTree, v:tree, t:tree, mname(i:Ident));} .
 
 varinout = <
-	= . // epsilon
-	= '?' .
-	= '!' .
-	= '?!' .
+	= // epsilon
+	{tree := mVARINOUT(0, 0);} . 
+	= '?'
+	{tree := mVARINOUT(1, 0);} .
+	= '!'
+	{tree := mVARINOUT(0, 1);} .
+	= '?!'
+	{tree := mVARINOUT(1, 1);} .
 > .
 
 vartype = <
-	= int .
-	= string .
-	= float .
+	= int
+	{tree := mint_type();} .
+	= string
+	{tree := mstring_type();} .
+	= float
+	{tree := mfloat_type();} .
 > .
 
 /* executionblock */
-executionblock = EXEC statementlist END_EXEC .
+executionblock = EXEC s:statementlist END_EXEC 
+			   {tree := s:tree;} .
 
 statementlist = <
-	= statement statementlist .
-	= . // epsilon
+	= h:statement t:statementlist
+	{tree := mstmts(t:tree, h:tree);} .
+	= // epsilon
+	{tree := mno_stmt();} .
 > .
 
 statement = <
-	= statementblock .
-	= identifier assignop expr '.' .
-	= ifthenelse_stmt .
-	= for_stmt .
-	= while_stmt .
+	= s:statementblock 
+	{tree := s:tree;}.
+	= i:identifier a:assignop e:expr '.'
+	{tree := setAssignStmt(a:tree, mname(i:Ident), e:tree);} .
+	= i:ifthenelse_stmt
+	{tree := i:tree;} .
+	= f:for_stmt
+	{tree := f:tree;} .
+	= w:while_stmt
+	{tree := w:tree;} .
 > .
 
-statementblock = begin statementlist end .
+statementblock = begin s:statementlist end
+			   {tree := s:tree;} .
 
 assignop = <
-	= '=' .
-	= '+=' .
-	= '-=' .
-	= '*=' .
-	= '/=' .
+	= '=' 
+	{tree := massign_stmt('=', NoTree, NoTree);} .
+	= '+='
+	{tree := massign_stmt('+', NoTree, NoTree);} .
+	= '-='
+	{tree := massign_stmt('-', NoTree, NoTree);} .
+	= '*='
+	{tree := massign_stmt('*', NoTree, NoTree);} .
+	= '/='
+	{tree := massign_stmt('/', NoTree, NoTree);} .
 > .
 
-ifthenelse_stmt = if condition then statementlist else_o endif .
+ifthenelse_stmt = if c:condition then t:statementlist e:else_o endif
+				{tree := mif_stmt(c:tree, t:tree, e:tree);} .
 
 else_o = <
-	= else statementlist .
-	= elif condition then statementlist else_o .
-	= . // epsilon
+	= else s:statementlist
+	{tree := s:tree;} .
+	= elif c:condition then t:statementlist e:else_o
+	{tree := mif_stmt(c:tree, t:tree, e:tree);} .
+	= // epsilon
+	{tree := mno_stmt();} .
 > .
 
-for_stmt = for identifier '=' expr '.' condition '.' identifier assignop expr do statementlist endfor .
+for_stmt = for i1:identifier '=' e1:expr '.' c:condition '.' i2:identifier o:assignop e2:expr do s:statementlist endfor 
+		 {tree := mfor_stmt(massign_stmt('=', mname(i1:Ident), e1:tree), c:tree, setAssignStmt(o:tree, mname(i2:Ident), e2:tree), s:tree);} .
 
-while_stmt = while condition do statementlist endwhile .
+while_stmt = while c:condition do s:statementlist endwhile
+		   {tree := mwhile_stmt(c:tree, s:tree);} .
 
 expr = <
-	= int_const .
-	= float_const .
-	= string_const .
-	= identifier .
-	= expr '+' expr .
-	= expr '-' expr .
-	= expr '*' expr .
-	= expr '/' expr .
-	= '-' expr PREC UNARY .
-	= '(' expr ')' .
+	= i:int_const 
+	{tree := mint_const(i:Value);} .
+	= f:float_const
+	{tree := mfloat_const(f:Value);} .
+	= s:string_const
+	{tree := mstring_const(s:Value);} .
+	= i:identifier
+	{tree := mname(i:Ident);} .
+	= l:expr '+' r:expr
+	{tree := mbinary_expr('+', l:tree, r:tree);} .
+	= l:expr '-' r:expr
+	{tree := mbinary_expr('-', l:tree, r:tree);} .
+	= l:expr '*' r:expr
+	{tree := mbinary_expr('*', l:tree, r:tree);} .
+	= l:expr '/' r:expr
+	{tree := mbinary_expr('/', l:tree, r:tree);} .
+	= '-' e:expr PREC UNARY
+	{tree := munary_expr('-', e:tree);} .
+	= '(' e:expr ')'
+	{tree := e:tree;} .
 > .
 
 condition = <
-	= expr '==' expr .
-	= expr '~=' expr .
-	= expr '<' expr .
-	= expr '>' expr .
-	= expr '<=' expr .
-	= expr '>=' expr .
-	= condition '&&' condition .
-	= condition '||' condition .
-	= '~' condition .
-	= '(' condition ')' .
+	= l:expr '==' r:expr
+	{tree := mbin_expr_cond(eq, l:tree, r:tree);} .
+	= l:expr '~=' r:expr
+	{tree := mbin_expr_cond(neq, l:tree, r:tree);} .
+	= l:expr '<' r:expr
+	{tree := mbin_expr_cond(lt, l:tree, r:tree);} .
+	= l:expr '>' r:expr
+	{tree := mbin_expr_cond(gt, l:tree, r:tree);} .
+	= l:expr '<=' r:expr
+	{tree := mbin_expr_cond(let, l:tree, r:tree);} .
+	= l:expr '>=' r:expr
+	{tree := mbin_expr_cond(get, l:tree, r:tree);} .
+	= l:condition '&&' r:condition
+	{tree := mbin_cond('&', l:tree, r:tree);} .
+	= l:condition '||' r:condition
+	{tree := mbin_cond('|', l:tree, r:tree);} .
+	= '~' c:condition
+	{tree := munary_cond('~', c:tree);} .
+	= '(' c:condition ')'
+	{tree := c:tree;} .
 > .
 
 /* Tokens */
@@ -117,3 +191,27 @@ int_const:    [Value: long]       {Value := 0;        } .
 float_const:  [Value: double]     {Value := 0.0;      } .
 string_const: [Value: tStringRef] {Value := NoString; } .
 identifier:   [Ident: tIdent] 	  {Ident := NoIdent;  } .
+
+/* Attributes */
+MODULE attributes
+PROPERTY SYN
+DECLARE
+ program
+ metainfo
+ vardeclarationblock
+ vardeclarationlist
+ vardeclaration
+ varinout
+ vartype
+ executionblock
+ statementlist
+ statement
+ statementblock
+ assignop
+ ifthenelse_stmt
+ else_o
+ for_stmt
+ while_stmt
+ expr
+ condition = [tree: tTree].
+END attributes

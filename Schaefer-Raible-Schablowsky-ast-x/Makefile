@@ -7,18 +7,18 @@
 ###############################################################################
 
 # The executable to produce:
-MAIN		= expr-ast
+MAIN		= x-ast
 
 # Source files
 SRC_C		= main.c
-SRC		= expr.scan 	        \
-		  expr$(SOLUTION).pars	\
-		  expr$(SOLUTION).ast 	\
+SRC		= x.scan 	        \
+		  x.pars	\
+		  x.ast 	\
 
 # Generated files
-GEN_C		= expr_scan.c expr_scanSource.c expr_pars.c Tree.c
-GEN_H		= expr_scan.h expr_scanSource.h expr_pars.h Tree.h yyTree.h
-GEN		= expr.rex expr_scan.rpp expr_pars.lrk      Tree.TS
+GEN_C		= x_scan.c x_scanSource.c x_pars.c Tree.c
+GEN_H		= x_scan.h x_scanSource.h x_pars.h Tree.h yyTree.h
+GEN		= x.rex x_scan.rpp x_pars.lrk      Tree.TS
 
 ###############################################################################
 
@@ -31,30 +31,34 @@ all: $(MAIN)
 
 # Run the test suite
 test:
-	for f in test*; 	\
-	do			\
-	  echo "$$f ...";	\
-	  ./$(MAIN) $$f; echo;	\
-	done
+	./$(MAIN) ggt.x; echo
+	./$(MAIN) faculty.x; echo
+	./$(MAIN) calc_n.x; echo
+	./$(MAIN) test1.x; echo
+	./$(MAIN) test2.x; echo
+	./$(MAIN) test3.x; echo
+	./$(MAIN) test4.x; echo
+	./$(MAIN) test5.x; echo
+	./$(MAIN) test6.x; echo
 
 ###############################################################################
 
 # Create the Parser
-expr_pars.lrk expr_scan.rpp: expr$(SOLUTION).pars
-	lpp -cxzj  expr$(SOLUTION).pars
+x_pars.lrk x_scan.rpp: x.pars
+	lpp -cxzj  x.pars
 
 LARK_OPTS = -cdi -Dw -5  # -5 ==> create the graphic LR-browser
 LARK_OPTS = -cdi -Dw     #    ==> see ../config.mk
-expr_pars.c expr_pars.h: expr_pars.lrk
-	lark $(LARK_OPTS) expr_pars.lrk
+x_pars.c x_pars.h: x_pars.lrk
+	lark $(LARK_OPTS) x_pars.lrk
 
 # Create the Scanner
-expr.rex: expr.scan expr_scan.rpp
-	rpp < expr.scan expr_scan.rpp > expr.rex
+x.rex: x.scan x_scan.rpp
+	rpp < x.scan x_scan.rpp > x.rex
 
-expr_scan.c expr_scan.h expr_scanSource.c expr_scanSource.h: expr.rex
-	rex -cdis -y expr.rex
-	rm -f expr_scanDrv.c
+x_scan.c x_scan.h x_scanSource.c x_scanSource.h: x.rex
+	rex -cdis -y x.rex
+	rm -f x_scanDrv.c
 
 # Create the Abstract Syntax Tree module
 # AST options
@@ -70,8 +74,8 @@ expr_scan.c expr_scan.h expr_scanSource.c expr_scanSource.h: expr.rex
 # -k generate graph type checker   CheckTREE
 # -q generate text  graph browser  QueryTREE
 # -e generate graphic browser      procedure DrawTREE
-Tree.TS Tree.c Tree.h yyTree.h: expr$(SOLUTION).ast
-	ast -cdi -4wemRk expr$(SOLUTION).ast
+Tree.TS Tree.c Tree.h yyTree.h: x.ast
+	ast -cdi -4wemRk x.ast
 
 ###############################################################################
 
