@@ -8,6 +8,7 @@ TREE   Tree
 
 IMPORT {
   #include "Idents.h"
+  #include "Position.h"
   
   typedef enum {
     eq,
@@ -35,7 +36,7 @@ PROPERTY INPUT  /* all attributes are parameters of the generate the mXX() routi
 
 RULE  /* Here we define the node types */
 
-PROGRAM =
+PROGRAM = [Pos: tPosition]
   Name: name
   Vars: VAR_DEC
   Body: STMTS
@@ -43,42 +44,43 @@ PROGRAM =
 
 VAR_DEC = <
   no_var_dec = .
-  var_dec = Next: VAR_DEC REV
+  var_dec = [Pos: tPosition]
+            Next: VAR_DEC REV
             IO: VARINOUT
             Type: TYPE
             Var: name .
 > .
 
-VARINOUT = 
+VARINOUT = [Pos: tPosition]
   [IsInput: int]
   [IsOutput: int] .
 
-TYPE = <
+TYPE = [Pos: tPosition] <
   int_type = .
   float_type = .
   string_type = .
 > .
 
-STMTS = <
+STMTS = [Pos: tPosition] <
   no_stmt = .
   STMT = Next: STMTS REV <
-  be_stmt = Body: STMTS .
-  assign_stmt = [Op: char]
-                Var: name
-                Rhs: EXPR .
-  if_stmt = Cond: COND
-            Then: STMTS
-            Else: STMTS .
-  for_stmt =  Pre: assign_stmt
-              Cond: COND
-              Post: assign_stmt
-              Body: STMTS .
-  while_stmt =  Cond: COND
+    be_stmt = Body: STMTS .
+    assign_stmt = [Op: char]
+                  Var: name
+                  Rhs: EXPR .
+    if_stmt = Cond: COND
+              Then: STMTS
+              Else: STMTS .
+    for_stmt =  Pre: assign_stmt
+                Cond: COND
+                Post: assign_stmt
                 Body: STMTS .
+    while_stmt =  Cond: COND
+                  Body: STMTS .
   > .
 > .
 
-EXPR = <
+EXPR = [Pos: tPosition] <
   int_const: [Value: long] .
   float_const: [Value: double] .
   string_const: [Value: tStringRef] .
@@ -90,7 +92,7 @@ EXPR = <
                 Right: EXPR .
 > .
 
-COND = <
+COND = [Pos: tPosition] <
   bin_expr_cond = [Op: eCondExprOp]
                   Left: EXPR
                   Right: EXPR .

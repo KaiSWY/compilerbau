@@ -36,10 +36,10 @@ root = p:program
 	 {=> {TreeRoot = p:tree;};} .
 
 program = m:metainfo v:vardeclarationblock e:executionblock
-		{tree := mPROGRAM(mname(m:name), v:tree, e:tree);} .
+		{tree := mPROGRAM(m:Position, m:tree, v:tree, e:tree);} .
 
-metainfo = PROG i:identifier '.' 
-		 {name := i:Ident;} .
+metainfo = p:PROG i:identifier '.' 
+		 {tree := mname(i:Position, i:Ident); Position := p:Position;} .
 
 /* variable declarations */
 vardeclarationblock = VAR v:vardeclarationlist END_VAR
@@ -53,44 +53,44 @@ vardeclarationlist = <
 > .
 
 vardeclaration = v:varinout t:vartype i:identifier '.'
-			   {tree := mvar_dec(NoTree, v:tree, t:tree, mname(i:Ident));} .
+			   {tree := mvar_dec(t:Position, NoTree, v:tree, t:tree, mname(i:Position, i:Ident));} .
 
 varinout = <
 	= // epsilon
-	{tree := mVARINOUT(0, 0);} . 
-	= '?'
-	{tree := mVARINOUT(1, 0);} .
-	= '!'
-	{tree := mVARINOUT(0, 1);} .
-	= '?!'
-	{tree := mVARINOUT(1, 1);} .
+	{tree := mVARINOUT(NoPosition, 0, 0);} . 
+	= c:'?'
+	{tree := mVARINOUT(c:Position, 1, 0);} .
+	= c:'!'
+	{tree := mVARINOUT(c:Position, 0, 1);} .
+	= c:'?!'
+	{tree := mVARINOUT(c:Position, 1, 1);} .
 > .
 
 vartype = <
-	= int
-	{tree := mint_type();} .
-	= string
-	{tree := mstring_type();} .
-	= float
-	{tree := mfloat_type();} .
+	= i:int
+	{tree := mint_type(i:Position);} .
+	= s:string
+	{tree := mstring_type(s:Position);} .
+	= f:float
+	{tree := mfloat_type(f:Position);} .
 > .
 
 /* executionblock */
-executionblock = EXEC s:statementlist END_EXEC 
+executionblock = e:EXEC s:statementlist END_EXEC 
 			   {tree := s:tree;} .
 
 statementlist = <
 	= h:statement t:statementlist
 	{tree := setNextSTMT(h:tree, t:tree);} .
 	= // epsilon
-	{tree := mno_stmt();} .
+	{tree := mno_stmt(NoPosition);} .
 > .
 
 statement = <
 	= s:statementblock 
 	{tree := s:tree;}.
 	= i:identifier a:assignop e:expr '.'
-	{tree := massign_stmt(NoTree, a:op, mname(i:Ident), e:tree);} .
+	{tree := massign_stmt(a:Position, NoTree, a:op, mname(i:Position, i:Ident), e:tree);} .
 	= i:ifthenelse_stmt
 	{tree := i:tree;} .
 	= f:for_stmt
@@ -99,82 +99,86 @@ statement = <
 	{tree := w:tree;} .
 > .
 
-statementblock = begin s:statementlist end
+statementblock = b:begin s:statementlist end
 			   {tree := s:tree;} .
 
 assignop = <
-	= '=' 
-	{op := '=';} .
-	= '+='
-	{op := '+';} .
-	= '-='
-	{op := '-';} .
-	= '*='
-	{op := '*';} .
-	= '/='
-	{op := '/';} .
+	= o:'=' 
+	{op := '='; Position := o:Position;} .
+	= o:'+='
+	{op := '+'; Position := o:Position;} .
+	= o:'-='
+	{op := '-'; Position := o:Position;} .
+	= o:'*='
+	{op := '*'; Position := o:Position;} .
+	= o:'/='
+	{op := '/'; Position := o:Position;} .
 > .
 
-ifthenelse_stmt = if c:condition then t:statementlist e:else_o endif
-				{tree := mif_stmt(NoTree, c:tree, t:tree, e:tree);} .
+ifthenelse_stmt = i:if c:condition then t:statementlist e:else_o endif
+				{tree := mif_stmt(i:Position, NoTree, c:tree, t:tree, e:tree);} .
 
 else_o = <
 	= else s:statementlist
 	{tree := s:tree;} .
-	= elif c:condition then t:statementlist e:else_o
-	{tree := mif_stmt(NoTree, c:tree, t:tree, e:tree);} .
+	= i:elif c:condition then t:statementlist e:else_o
+	{tree := mif_stmt(i:Position, NoTree, c:tree, t:tree, e:tree);} .
 	= // epsilon
-	{tree := mno_stmt();} .
+	{tree := mno_stmt(NoPosition);} .
 > .
 
-for_stmt = for i1:identifier '=' e1:expr '.' c:condition '.' i2:identifier o:assignop e2:expr do s:statementlist endfor 
-		 {tree := mfor_stmt(NoTree, massign_stmt(mno_stmt(), '=', mname(i1:Ident), e1:tree), c:tree, massign_stmt(mno_stmt(), o:op, mname(i2:Ident), e2:tree), s:tree);} .
+for_stmt = f:for i1:identifier '=' e1:expr '.' c:condition '.' i2:identifier o:assignop e2:expr do s:statementlist endfor 
+		 {tree := { 
+				tTree assign1 = massign_stmt('=':Position, mno_stmt(NoPosition), '=', mname(i1:Position, i1:Ident), e1:tree);
+				tTree assign2 = massign_stmt(o:Position, mno_stmt(NoPosition), o:op, mname(i2:Position, i2:Ident), e2:tree);
+				tree = mfor_stmt(f:Position, NoTree, assign1, c:tree, assign2, s:tree);
+			};} .
 
-while_stmt = while c:condition do s:statementlist endwhile
-		   {tree := mwhile_stmt(NoTree, c:tree, s:tree);} .
+while_stmt = w:while c:condition do s:statementlist endwhile
+		   {tree := mwhile_stmt(w:Position, NoTree, c:tree, s:tree);} .
 
 expr = <
 	= i:int_const 
-	{tree := mint_const(i:Value);} .
+	{tree := mint_const(i:Position, i:Value);} .
 	= f:float_const
-	{tree := mfloat_const(f:Value);} .
+	{tree := mfloat_const(f:Position, f:Value);} .
 	= s:string_const
-	{tree := mstring_const(s:Value);} .
+	{tree := mstring_const(s:Position, s:Value);} .
 	= i:identifier
-	{tree := mname(i:Ident);} .
+	{tree := mname(i:Position, i:Ident);} .
 	= l:expr '+' r:expr
-	{tree := mbinary_expr('+', l:tree, r:tree);} .
+	{tree := mbinary_expr('+':Position, '+', l:tree, r:tree);} .
 	= l:expr '-' r:expr
-	{tree := mbinary_expr('-', l:tree, r:tree);} .
+	{tree := mbinary_expr('-':Position, '-', l:tree, r:tree);} .
 	= l:expr '*' r:expr
-	{tree := mbinary_expr('*', l:tree, r:tree);} .
+	{tree := mbinary_expr('*':Position, '*', l:tree, r:tree);} .
 	= l:expr '/' r:expr
-	{tree := mbinary_expr('/', l:tree, r:tree);} .
+	{tree := mbinary_expr('/':Position, '/', l:tree, r:tree);} .
 	= '-' e:expr PREC UNARY
-	{tree := munary_expr('-', e:tree);} .
+	{tree := munary_expr('-':Position, '-', e:tree);} .
 	= '(' e:expr ')'
 	{tree := e:tree;} .
 > .
 
 condition = <
-	= l:expr '==' r:expr
-	{tree := mbin_expr_cond(eq, l:tree, r:tree);} .
-	= l:expr '~=' r:expr
-	{tree := mbin_expr_cond(neq, l:tree, r:tree);} .
-	= l:expr '<' r:expr
-	{tree := mbin_expr_cond(lt, l:tree, r:tree);} .
-	= l:expr '>' r:expr
-	{tree := mbin_expr_cond(gt, l:tree, r:tree);} .
-	= l:expr '<=' r:expr
-	{tree := mbin_expr_cond(let, l:tree, r:tree);} .
-	= l:expr '>=' r:expr
-	{tree := mbin_expr_cond(get, l:tree, r:tree);} .
-	= l:condition '&&' r:condition
-	{tree := mbin_cond('&', l:tree, r:tree);} .
-	= l:condition '||' r:condition
-	{tree := mbin_cond('|', l:tree, r:tree);} .
-	= '~' c:condition
-	{tree := munary_cond('~', c:tree);} .
+	= l:expr o:'==' r:expr
+	{tree := mbin_expr_cond(o:Position, eq, l:tree, r:tree);} .
+	= l:expr o:'~=' r:expr
+	{tree := mbin_expr_cond(o:Position, neq, l:tree, r:tree);} .
+	= l:expr o:'<' r:expr
+	{tree := mbin_expr_cond(o:Position, lt, l:tree, r:tree);} .
+	= l:expr o:'>' r:expr
+	{tree := mbin_expr_cond(o:Position, gt, l:tree, r:tree);} .
+	= l:expr o:'<=' r:expr
+	{tree := mbin_expr_cond(o:Position, let, l:tree, r:tree);} .
+	= l:expr o:'>=' r:expr
+	{tree := mbin_expr_cond(o:Position, get, l:tree, r:tree);} .
+	= l:condition o:'&&' r:condition
+	{tree := mbin_cond(o:Position, '&', l:tree, r:tree);} .
+	= l:condition o:'||' r:condition
+	{tree := mbin_cond(o:Position, '|', l:tree, r:tree);} .
+	= o:'~' c:condition
+	{tree := munary_cond(o:Position, '~', c:tree);} .
 	= '(' c:condition ')'
 	{tree := c:tree;} .
 > .
@@ -194,7 +198,6 @@ DECLARE
  vardeclarationlist
  vardeclaration
  varinout
- vartype
  executionblock
  statementlist
  statement
@@ -206,7 +209,9 @@ DECLARE
  expr
  condition = [tree: tTree].
  
- metainfo = [name: tIdent].
+ metainfo = [tree: tTree] [Position: tPosition].
  
- assignop = [op: char].
+ assignop = [op: char] [Position: tPosition].
+ 
+ vartype = [tree: tTree] [Position: tPosition].
 END attributes
