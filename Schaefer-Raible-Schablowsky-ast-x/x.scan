@@ -93,6 +93,7 @@ RULES
 #STRING# \" : {
   yyStart(STD);
   x_scan_Attribute.string_const.Value = PutString(stringBuffer, stringLen);
+  x_scan_Attribute.string_const.Position = stringPos;
   return string_const;
 }
 
