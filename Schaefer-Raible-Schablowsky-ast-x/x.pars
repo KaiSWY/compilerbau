@@ -83,7 +83,7 @@ statementlist = <
 	= h:statement t:statementlist
 	{tree := setNextSTMT(h:tree, t:tree);} .
 	= // epsilon
-	{tree := mno_stmt(NoPosition);} .
+	{tree := mno_stmt();} .
 > .
 
 statement = <
@@ -124,13 +124,13 @@ else_o = <
 	= i:elif c:condition then t:statementlist e:else_o
 	{tree := mif_stmt(i:Position, NoTree, c:tree, t:tree, e:tree);} .
 	= // epsilon
-	{tree := mno_stmt(NoPosition);} .
+	{tree := mno_stmt();} .
 > .
 
 for_stmt = f:for i1:identifier '=' e1:expr '.' c:condition '.' i2:identifier o:assignop e2:expr do s:statementlist endfor 
 		 {tree := { 
-				tTree assign1 = massign_stmt('=':Position, mno_stmt(NoPosition), '=', mname(i1:Position, i1:Ident), e1:tree);
-				tTree assign2 = massign_stmt(o:Position, mno_stmt(NoPosition), o:op, mname(i2:Position, i2:Ident), e2:tree);
+				tTree assign1 = massign_stmt('=':Position, mno_stmt(), '=', mname(i1:Position, i1:Ident), e1:tree);
+				tTree assign2 = massign_stmt(o:Position, mno_stmt(), o:op, mname(i2:Position, i2:Ident), e2:tree);
 				tree = mfor_stmt(f:Position, NoTree, assign1, c:tree, assign2, s:tree);
 			};} .
 

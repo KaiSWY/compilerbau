@@ -61,22 +61,23 @@ TYPE = [Pos: tPosition] <
   string_type = .
 > .
 
-STMTS = [Pos: tPosition] <
+STMTS = <
   no_stmt = .
-  STMT = Next: STMTS REV <
-    be_stmt = Body: STMTS .
-    assign_stmt = [Op: char]
-                  Var: name
-                  Rhs: EXPR .
-    if_stmt = Cond: COND
-              Then: STMTS
-              Else: STMTS .
-    for_stmt =  Pre: assign_stmt
-                Cond: COND
-                Post: assign_stmt
-                Body: STMTS .
-    while_stmt =  Cond: COND
+  STMT = [Pos: tPosition]
+      Next: STMTS REV <
+      be_stmt = Body: STMTS .
+      assign_stmt = [Op: char]
+                    Var: name
+                    Rhs: EXPR .
+      if_stmt = Cond: COND
+                Then: STMTS
+                Else: STMTS .
+      for_stmt =  Pre: assign_stmt
+                  Cond: COND
+                  Post: assign_stmt
                   Body: STMTS .
+      while_stmt =  Cond: COND
+                    Body: STMTS .
   > .
 > .
 
