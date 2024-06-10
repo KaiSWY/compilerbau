@@ -61,11 +61,7 @@ TYPE = <
 
 STMTS = <
   no_stmt = .
-  stmts = Next: STMTS REV
-          Stmt: STMT .
-> .
-
-STMT = <
+  STMT = Next: STMTS REV <
   be_stmt = Body: STMTS .
   assign_stmt = [Op: char]
                 Var: name
@@ -79,6 +75,7 @@ STMT = <
               Body: STMTS .
   while_stmt =  Cond: COND
                 Body: STMTS .
+  > .
 > .
 
 EXPR = <
